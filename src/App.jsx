@@ -20,7 +20,6 @@ const voteModule = sdk.getVoteModule(
 
 const App = () => {
   const { connectWallet, address, error, provider } = useWeb3();
-  console.log("Address: ", address);
 
   const signer = provider?.getSigner();
   const [hasClaimedNFT, setHasClaimedNFT] = useState(false);
@@ -36,13 +35,33 @@ const App = () => {
       if (!hasClaimedNFT) {
         return;
       }
+
+      // get and set proposals
       try {
         const proposals = await voteModule.getAll();
         setProposals(proposals);
-        console.log('Proposals: ', proposals);
       } catch (err) {
         console.error('Failed to get proposals: ', err);
       }
+
+      // get and set member token amounts
+      try {
+        const amounts = await tokenModule.getAllHolderBalances();
+        setMemberTokenAmounts(amounts);
+      } catch (err) {
+        console.error("Failed to get token amounts: ", err);
+      }
+
+      // get and set member addresses
+      try {
+        const memberAddresses = await bundleDropModule.getAllClaimerAddresses(
+          "0"
+        );
+        setMemberAddresses(memberAddresses);
+      } catch (err) {
+        console.error("Failed to get member list: ", err);
+      }
+
     })();
   }, [hasClaimedNFT]);
 
@@ -54,11 +73,6 @@ const App = () => {
       try {
         const hasVoted = await proposals[0] ? voteModule.hasVoted(proposals[0].proposalId, address) : null;
         setHasVoted(hasVoted);
-        if (hasVoted) {
-          console.log('User has already voted');
-        } else {
-          console.log('User has not voted');
-        }
       } catch (err) {
         console.error('Failed to check if wallet has voted: ', err);
       }
@@ -69,38 +83,6 @@ const App = () => {
     return str.substring(0, 6) + "..." + str.substring(str.length - 4);
   };
 
-  useEffect(() => {
-    (async () => {
-      if (!hasClaimedNFT) {
-        return;
-      }
-      try {
-        const memberAddresses = await bundleDropModule.getAllClaimerAddresses(
-          "0"
-        );
-        setMemberAddresses(memberAddresses);
-        console.log("Member Addresses: ", memberAddresses);
-      } catch (err) {
-        console.error("Failed to get member list: ", err);
-      }
-    })();
-  }, [hasClaimedNFT]);
-
-  useEffect(() => {
-    (async () => {
-      if (!hasClaimedNFT) {
-        return;
-      }
-      try {
-        const amounts = await tokenModule.getAllHolderBalances();
-        setMemberTokenAmounts(amounts);
-        console.log("amounts: ", amounts);
-      } catch (err) {
-        console.error("Failed to get token amounts: ", err);
-      }
-    })();
-  }, [hasClaimedNFT]);
-
   const memberList = useMemo(() => {
     return memberAddresses.map((address) => {
       return {
@@ -108,10 +90,10 @@ const App = () => {
         tokenAmount: ethers.utils.formatUnits(
           memberTokenAmounts[address] || 0,
           18
-        ),
-      };
-    });
-  }, [memberAddresses, memberTokenAmounts]);
+          ),
+        };
+      });
+    }, [memberAddresses, memberTokenAmounts]);
 
   useEffect(() => {
     sdk.setProviderOrSigner(signer);
@@ -127,10 +109,8 @@ const App = () => {
       try {
         if (balance.gt(0)) {
           setHasClaimedNFT(true);
-          console.log("User has a membership NFT");
         } else {
           setHasClaimedNFT(false);
-          console.log("User does not have a membership NFT");
         }
       } catch (err) {
         setHasClaimedNFT(false);
@@ -265,8 +245,6 @@ const App = () => {
                       );
                       // if we get here that means we successfully voted, so let's set the "hasVoted" state to true
                       setHasVoted(true);
-                      // and log out a success message
-                      console.log("successfully voted");
                     } catch (err) {
                       console.error("failed to execute votes", err);
                     }
@@ -326,9 +304,6 @@ const App = () => {
     try {
       await bundleDropModule.claim("0", 1);
       setHasClaimedNFT(true);
-      console.log(
-        `Successfully minted NFT.  Check it out at https://testnets.opensea.io/assets/${bundleDropModule.address}/0`
-      );
     } catch (err) {
       console.error("Failed to claim NFT: ", err);
     } finally {

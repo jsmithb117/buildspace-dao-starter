@@ -4,18 +4,16 @@ import ethers from "ethers";
 import dotenv from "dotenv";
 dotenv.config();
 
-// console.log('Process.env: ', process.env)
-
 if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY === "") {
-  console.log('Private key not found.');
+  console.error('Private key not found.');
 }
 
 if (!process.env.ALCHEMY_API_URL || process.env.ALCHEMY_API_URL === "") {
-  console.log('Alchemy API URL not found.');
+  console.error('Alchemy API URL not found.');
 }
 
 if (!process.env.WALLET_ADDRESS || process.env.WALLET_ADDRESS === "") {
-  console.log('Wallet address not found.');
+  console.error('Wallet address not found.');
 }
 
 const sdk = new ThirdwebSDK(
